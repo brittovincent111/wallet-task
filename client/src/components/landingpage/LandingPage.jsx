@@ -66,9 +66,6 @@ function LandingPage() {
 
 
 
-  
-
-
 
 
     /* ---------------- USER DETAILS AND PAYMENT HISTORY SETTING ---------------- */
@@ -254,10 +251,7 @@ function LandingPage() {
 
             setFilters(transation)
 
-
         }
-       
-
 
     }
 
@@ -268,17 +262,9 @@ function LandingPage() {
     const onHandleChange = (e) => {
         e.preventDefault()
 
-        try {
-
-            
-            console.log("reached")
             setAddAmount({ ...addAmount, [e.target.name]: e.target.value })
 
-        } catch (error) {
-
-
-        }
-
+       
     }
 
     const onHandleDeposit = async (e) => {
@@ -317,9 +303,16 @@ function LandingPage() {
 
             }
             
-       
-
         } catch (error) {
+
+            if (error?.response?.status === 403) {
+                console.log("hiiii")
+                localStorage.removeItem('userToken')
+               
+                Navigate("/login")
+             }else{
+               Navigate('/errorPage')
+             }
 
         }
     }
