@@ -133,7 +133,7 @@ function LandingPage() {
              }
 
         }
-    }
+    }   
 
     /* -------------------------- SETTING VERIFYED USER ------------------------- */
 
