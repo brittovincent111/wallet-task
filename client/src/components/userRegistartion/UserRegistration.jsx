@@ -24,11 +24,7 @@ export default function UserRegistration() {
         password: "",
         confirmpassword: ""
     })
-    const [resend, setResend] = useState(false)
-    const [otpModal, setOtpModal] = useState(false)
-    const [OTP, setOTP] = useState("");
-    const [loader, setLoader] = useState(false)
-    const [loading, setloading] = useState(false)
+ 
 
 
     /* ------------------------------ HANDLE CHANGE ----------------------------- */
@@ -56,53 +52,47 @@ export default function UserRegistration() {
 
         }
         e.preventDefault()
-        try {
-            if (!signUp.userId) {
-                setErrorMessage("UserId is required");
-            } else if (signUp.userIdlength < 3) {
-                setErrorMessage("UserId must be atleast 3 characters");
-            }
-            else if (!signUp.username) {
-                setErrorMessage("Userame is required");
-            } else if (signUp.username.length < 3) {
-                setErrorMessage("Name must be atleast 3 characters");
-            } else if (!signUp.username.match(/^(?!.\.\.)(?!.\.$)[^\W][\w.]{0,29}$/)) {
-                setErrorMessage("Enter a valid name");
-            } else if (!signUp.email) {
-                setErrorMessage("Email is required");
-            } else if (!signUp.email.match(/^[A-Za-z0-9._-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$/)) {
-                setErrorMessage("Enter a valid email");
+
+        if (!signUp.username) {
+            setErrorMessage("username is required");
+        } else if (signUp.username.lenght < 3) {
+            setErrorMessage("username must be atleast 3 characters");
+        }
+        else if (!signUp.userId) {
+            setErrorMessage("UserId is required");
+        } else if (signUp.userId.length < 3) {
+            setErrorMessage("UserId must be atleast 3 characters");
+        } else if (!signUp.userId.match(/^(?!.\.\.)(?!.\.$)[^\W][\w.]{0,29}$/)) {
+            setErrorMessage("UserId a valid name");
+        } else if (!signUp.email) {
+            setErrorMessage("Email is required");
+        } else if (!signUp.email.match(/^[A-Za-z0-9._-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$/)) {
+            setErrorMessage("Enter a valid email");
 
 
-            } else if (!signUp.password) {
-                setErrorMessage("Password is required");
-            } else if (signUp.password.length < 4) {
-                setErrorMessage("Password must be atleast 4 characters");
-            } else if (signUp.password.length > 20) {
-                setErrorMessage("Password must be less than 20 characters");
-            } else if (!signUp.confirmpassword) {
-                setErrorMessage("Confirm Password is required");
-            } else if (signUp.password != signUp.confirmpassword) {
-                setErrorMessage("Password Incorrect");
-            } else {
-
-                try {
-
-                    const {data} = registration(signUp)
+        } else if (!signUp.password) {
+            setErrorMessage("Password is required");
+        } else if (signUp.password.length < 4) {
+            setErrorMessage("Password must be atleast 4 characters");
+        } else if (signUp.password.length > 20) {
+            setErrorMessage("Password must be less than 20 characters");
+        } else if (!signUp.confirmpassword) {
+            setErrorMessage("Confirm Password is required");
+        } else if (signUp.password != signUp.confirmpassword) {
+            setErrorMessage("Password Incorrect");
+        } else {
 
 
 
-                } catch (error) {
+            registration(signUp).then((data) => {
+
+                Navigate('/login')
+            }).catch((data) => {
+                setErrorMessage(data.response.data.error);
 
 
+            })
 
-
-                }
-
-
-            }
-        } catch (error) {
-            console.log();
         }
 
 
@@ -124,9 +114,9 @@ export default function UserRegistration() {
                 </div> */}
 
                     <div hidden className='mainbg relative w-2/5   bg-sky-600 rounded-tl-2xl rounded-bl-2xl lg:block   '
-                 
 
-                      >
+
+                    >
                         {/* <div className='w-20 h-20   absolute left-[40%] bottom-16 rounded-full bg-sky-900 hover:bg-gray-200 flex justify-center items-center'>
                             <Link to='/login' className='text-xl text-white hover:text-sky-900 font-semibold '>LOGIN</Link>
 
@@ -144,7 +134,7 @@ export default function UserRegistration() {
                     <div className='w-3/5 p-1'>
 
                         <div className='py- flex flex-col justify-center items-center'>
-                            <h2 className= 'py-5 text-teal-900 text-3xl mb-2 font-semibold align-top flex justify-center '>SIGNUP </h2>
+                            <h2 className='py-5 text-teal-900 text-3xl mb-2 font-semibold align-top flex justify-center '>SIGNUP </h2>
                             {/* <div className='border w-44  border-sky-700  mb-2'></div> */}
 
                             <form onSubmit={OnSignup}>
@@ -153,11 +143,11 @@ export default function UserRegistration() {
                                 <div className='flex flex-col items-center '>
                                     <div className='bg-gray-100 w-80 p-1 flex items-center mb-4 rounded-2xl border-2 h-10'>
                                         <FaUserAlt className='mr-2 mx-2' />
-                                        <input className=' bg-gray-100 outline-none  flex-1' type="name" placeholder='UserId' name='userId' onChange={(e) => { onHandleChange(e) }} />
+                                        <input className=' bg-gray-100 outline-none  flex-1' type="name" placeholder='Username' name='username' onChange={(e) => { onHandleChange(e) }} />
                                     </div>
                                     <div className='bg-gray-100 w-80 p-1 flex items-center mb-4 rounded-2xl border-2 h-10'>
                                         <FaUserAlt className='mr-2 mx-2' />
-                                        <input className=' bg-gray-100 outline-none  flex-1' type="name" placeholder='Username' name='username' onChange={(e) => { onHandleChange(e) }} />
+                                        <input className=' bg-gray-100 outline-none  flex-1' type="name" placeholder='UserId' name='userId' onChange={(e) => { onHandleChange(e) }} />
                                     </div>
 
                                     <div className='bg-gray-100 w-80 p-1 flex items-center mb-4 rounded-2xl border-2  h-10 '>

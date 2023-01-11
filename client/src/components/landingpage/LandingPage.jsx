@@ -1,69 +1,112 @@
 import React, { useState } from 'react'
-import { Button } from '@material-tailwind/react';
 import { AiOutlineWallet } from 'react-icons/ai'
 import { IoIosWallet } from 'react-icons/io'
 import Table from '../table/Table';
 import { useEffect } from 'react';
-import { findSearch, payment, userDetail } from '../../API/UserApi';
-import {FcApproval} from 'react-icons/fc'
-import {AiFillCloseCircle} from 'react-icons/ai'
-import {MdSend} from 'react-icons/md'
+import { debitedDetails, deposit, findSearch, payment, userDetail } from '../../API/UserApi';
+import { FcApproval } from 'react-icons/fc'
+import { AiFillCloseCircle } from 'react-icons/ai'
+import { MdSend } from 'react-icons/md'
 import jwt_decode from "jwt-decode";
+import Dropdown from 'react-dropdown';
+import 'react-dropdown/style.css';
+import userProfile from '../../assets/images/user3.png'
+import Swal from 'sweetalert2';
+
+
+
+import { AiOutlineArrowUp } from 'react-icons/ai'
+import SideBar from '../sidebar/SideBar';
+import { useNavigate } from 'react-router-dom';
 
 
 
 function LandingPage() {
     let token = localStorage.getItem('userToken');
     let decoded = jwt_decode(token);
-    console.log(decoded , "deccoded")
+    console.log(decoded, "deccoded")
 
-    const [showMod, SetShowMod] = useState(true)
+    const Navigate = useNavigate()
+
+    const [showMod, SetShowMod] = useState(false)
     const [details, setDetails] = useState({
-        senderId : decoded.id,
-        recieverId : "",
+        senderId: decoded.id,
+        recieverId: "",
         userId: "",
         username: "",
         amount: "",
-        message : ""
+        message: ""
 
     })
 
-    const [ userDetails , setUserDetails] = useState( {
+    const [userDetails, setUserDetails] = useState({
 
-        userId : "",
-        username : "" ,
-        wallet : "",
+        userId: "",
+        username: "",
+        wallet: "",
 
     })
 
-    const [transation , setTransation] = useState([])
+    const [addAmount, setAddAmount] = useState({
+        senderId: decoded.id,
+        recieverId: decoded.id,
+        amount: "",
+        message: ""
 
+    })
+
+    const [transation, setTransation] = useState([])
     const [searchUser, setSearchUser] = useState([])
+    const [filters, setFilters] = useState([])
+    const [showModal, SetShowModal] = useState(false)
+    const [vale, setVal] = useState('ACTIVITY')
+    const [updation, setUpdation] = useState("")
+    const [errorMessage, setErrorMessage] = useState("")
+    const [stateManage, setStateManage] = useState(true)
 
-    const [ filters , setFilters ] = useState([])
 
 
-    useEffect(()=>{
-       
-        try{
+  
 
-            const call = async()=>{
 
-            
-            const {data} =  await userDetail(decoded.id)
-    
-            console.log(data ,"dataaaa")
-            setUserDetails(data.details)
-            setTransation(data.payment)
+
+
+    /* ---------------- USER DETAILS AND PAYMENT HISTORY SETTING ---------------- */
+
+    useEffect(() => {
+
+        try {
+
+            const call = async () => {
+
+
+                const { data } = await userDetail(decoded.id)
+
+                console.log(data, "dataaaa")
+                setUserDetails(data.details)
+                setTransation(data.payment)
+                setFilters(data.payment)
             }
 
             call()
 
-        }catch(error){
+        } catch (error) {
+            if (error?.response?.status === 403) {
+                console.log("hiiii")
+                localStorage.removeItem('userToken')
+               
+                Navigate("/login")
+             }else{
+               Navigate('/errorPage')
+             }
 
         }
-        
-    },[])
+
+    }, [stateManage])
+
+
+    /* -------------------------- SEARCHING VALID USER -------------------------- */
+
 
     const handleSearch = async (e) => {
         e.preventDefault()
@@ -80,21 +123,31 @@ function LandingPage() {
             setSearchUser(data)
         } catch (error) {
 
+            if (error?.response?.status === 403) {
+                console.log("hiiii")
+                localStorage.removeItem('userToken')
+               
+                Navigate("/login")
+             }else{
+            //    Navigate('/errorPage')
+             }
+
         }
-
-
-
-
     }
+
+    /* -------------------------- SETTING VERIFYED USER ------------------------- */
 
     const handleSelect = (e, obj) => {
         e.preventDefault()
-        setDetails({ ...details, userId: obj.userId, username: obj.username , recieverId : obj._id })
+        setDetails({ ...details, userId: obj.userId, username: obj.username, recieverId: obj._id })
         console.log(details)
         setSearchUser([])
 
 
     }
+
+    /* -------------------------- REMOVE USER SELECTED -------------------------- */
+
 
     const handleRemove = (e, obj) => {
         e.preventDefault()
@@ -104,96 +157,231 @@ function LandingPage() {
 
     }
 
+
+    /* ----------------------- SETTING FORM VALUES SENDING ---------------------- */
+
     const handleChange = ((e) => {
 
         e.preventDefault()
-    
+
         setDetails({ ...details, [e.target.name]: e.target.value })
         // console.log(Login)
-    
-      })
 
-      const handleSubmit = async(e)=>{
+    })
+
+    /* ---------------------------- SUBMIT SEND FORM ---------------------------- */
+
+    const handleSubmit = async (e) => {
         e.preventDefault()
 
-        try{
+        try {
 
-            const {data} = await payment(details)
+            if (!details.recieverId) {
+                setErrorMessage("userdetails is required");
+            } else if (!details.amount) {
+                setErrorMessage("enter the amount");
+            } else if (details.amount > userDetails.wallet) {
+                console.log("reachedddddddd")
+                setErrorMessage("Amount excced wallet ");
 
-        }catch(error){
+            } else {
+
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "Amount Will Be Debited From Your Account!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, continue!'
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+
+
+
+                        SetShowMod(!showMod)
+                        setUpdation(Date.now())
+
+                        const { data } = await payment(details)
+                        setStateManage(!stateManage)
+                    }
+                })
+
+
+            }
+
+        } catch (error) {
+
+            if (error?.response?.status === 403) {
+                console.log("hiiii")
+                localStorage.removeItem('userToken')
+               
+                Navigate("/login")
+             }else{
+               Navigate('/errorPage')
+             }
 
         }
-      }
+    }
 
+    /* --------------------- THREE DIFFERENT TRANSATION VIEW -------------------- */
+
+    const filterHistory = async(e, val) => {
+        e.preventDefault()
+
+        setVal(val)
+
+       
+
+
+        if (val == 'CREDITED') {
+            let creaditData = transation.filter((obj) => {
+
+                return obj.status === 'credited'
+            })
+
+            setFilters(creaditData)
+
+            console.log(creaditData, "credited data")
+        } else if (val == 'DEBITED') {
+            let creaditData = transation.filter((obj) => {
+
+                return obj.status === 'debited'
+            })
+            setFilters(creaditData)
+
+        } else {
+
+            setFilters(transation)
+
+
+        }
+       
+
+
+    }
+
+
+    
+
+
+    const onHandleChange = (e) => {
+        e.preventDefault()
+
+        try {
+
+            
+            console.log("reached")
+            setAddAmount({ ...addAmount, [e.target.name]: e.target.value })
+
+        } catch (error) {
+
+
+        }
+
+    }
+
+    const onHandleDeposit = async (e) => {
+        e.preventDefault()
+        try {
+            
+         
+            if (!addAmount.amount) {
+                setErrorMessage("enter the amount");
+            } else if ( !addAmount.message ) {
+                console.log("reachedddddddd")
+                setErrorMessage("Enter The Message");
+
+            } else {
+
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "Amount Will Be Added To Account!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, continue!'
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+
+
+
+                        SetShowModal(!showModal)
+                    
+                        const { data } = await deposit(addAmount)
+                        setStateManage(!stateManage)
+                    }
+                })
+
+
+            }
+            
+       
+
+        } catch (error) {
+
+        }
+    }
+
+    /* ------------------------------- MODAL CLOSE ------------------------------ */
+
+    const closeModal =(e)=>{
+        e.preventDefault()
+        SetShowMod(false)
+        setErrorMessage("")
+    // setDetails("")
+
+
+
+
+    }
     return (
         <>
             <div className='w-screen flex  h-screen bg-gray-100'>
-                <div className='h-full w-[30%] bg-white px-5 pt-28 pb-5 '>
-                    <div className='w-full h-full bg-blue-300 rounded-md flex flex-col  items-center '>
-                        <div className='rounded-full bg-white h-28 w-28 mt-8 '>
-                        </div>
-                        <div className='text-xl font-semibold p-3'>UserName</div>
-                        <div className='text-xl font-semibold pb-5'>UserId</div>
+                <div className='h-full w-[30%] bg-white px-5 pt-28 pb-5  '>
+                    <SideBar userDetails={userDetails} SetShowMod={SetShowMod} showMod={showMod} SetShowModal={SetShowModal} showModal={showModal} />
+                </div>
+                <div className='mt-24 w-[70%] p-10'>
+                    <div className='flex flex-col justify-evenly pb-2'>
 
-                        <hr className='w-full text-black' />
-                        <p className='text-xl font-semibold p-2'>Wallet </p>
-                        <hr className='w-full text-black' />
-                        <div className='p-5'>
-                            <div className='flex   '>
-                                <div className='w-32  h-24 flex justify-center items-center  bg-slate-100 rounded-l-md '>
-                                    <IoIosWallet className='h-12 w-12' />
-                                </div>
-                                <div className=' h-24 flex flex-col w-full bg-blue-800 justify-center items-center rounded-r-md '>
-                                    <div className='text-xl font-medium p-2  w-fit text-white'>
-                                        wallet balance
-                                    </div>
-                                    <div className='text-xl font-semibold p-2 w-fit text-white'>
-                                        <span>$</span>100
+                        <div className='flex justify-between mb-2'>
+                            <div onClick={(e) => filterHistory(e, "TRANSACTION")}
+                                className={vale === "TRANSACTION" ? 'cursor-pointer hover:bg-gray-50 w-28 h-12 p-1  flex justify-center items-center rounded-md shadow-md bg-gray-200 ' : 'cursor-pointer hover:bg-gray-50 w-28 h-12 p-1  flex justify-center items-center rounded-md shadow-md'}>All</div>
+                            <div onClick={(e) => filterHistory(e, "CREDITED")}
+                                className={vale === "CREDITED" ? 'cursor-pointer hover:bg-gray-50 w-28 h-12 p-1  flex justify-center items-center rounded-md shadow-md bg-gray-200 ' : 'cursor-pointer hover:bg-gray-50 w-28 h-12 p-1  flex justify-center items-center rounded-md shadow-md'}>
+                                Credited</div>
 
-                                    </div>
-
-                                </div>
-
-
-                            </div>
-
-                        </div>
-
-
-                        <div className='flex justify-evenly w-full'>
-                            <button type="button" class="inline-block px-6 py-2.5 bg-blue-600 text-white font-medium text-xs leading-tight uppercase rounded-full shadow-md hover:bg-blue-700 hover:shadow-lg focus:bg-blue-700 focus:shadow-lg focus:outline-none focus:ring-0 active:bg-blue-800 active:shadow-lg transition duration-150 ease-in-out">Primary</button>
-
-                            <button type="button" class="inline-block px-6 py-2 border-2 border-blue-400 text-blue-400 font-medium text-xs leading-tight uppercase rounded-full hover:bg-black hover:bg-opacity-5 focus:outline-none focus:ring-0 transition duration-150 ease-in-out">Info</button>
+                            <div onClick={(e) => filterHistory(e, "DEBITED")}
+                                className={vale === "DEBITED" ? 'cursor-pointer hover:bg-gray-50 w-28 h-12 p-1  flex justify-center items-center rounded-md shadow-md bg-gray-200 ' : 'cursor-pointer hover:bg-gray-50 w-28 h-12 p-1  flex justify-center items-center rounded-md shadow-md'}>
+                                Debited</div>
 
 
                         </div>
 
-
-
+                        <div className='w-full h-10 flex justify-center text-lg font-bold my-3'> {vale}</div>
 
 
                     </div>
-                </div>
-                <div className='mt-24 w-[70%] p-10'>
-                    <div className='w-full h-10 flex justify-center text-lg font-bold'> MonthlyReport</div>
+
                     <div class="overflow-x-auto relative shadow-md sm:rounded-lg ">
                         <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                             <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                                 <tr>
                                     <th scope="col" class="py-3 px-6">
+                                        UserName
+                                    </th>
+                                    <th scope="col" class="py-3 px-6">
                                         Date
                                     </th>
                                     <th scope="col" class="py-3 px-6">
-                                        Estimated Time
+                                        Amount
                                     </th>
                                     <th scope="col" class="py-3 px-6">
-                                        Time Taken
+                                        Message
                                     </th>
                                     <th scope="col" class="py-3 px-6">
-                                        Total Task
-                                    </th>
-                                    <th scope="col" class="py-3 px-6">
-                                        Total Task
+                                        Status
                                     </th>
 
 
@@ -205,9 +393,17 @@ function LandingPage() {
 
 
 
+                                {
+                                    filters.map((obj) => {
+                                        return (
+
+                                            <Table obj={obj} />
+                                        )
 
 
-                                <Table />
+                                    })
+                                }
+
 
 
                                 {/* })} */}
@@ -224,10 +420,11 @@ function LandingPage() {
             {showMod ? (
                 <>
                     <form
-                    onSubmit={handleSubmit}
+                        onSubmit={handleSubmit}
                     >
                         <div className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none ">
                             <div className="relative w-2/5 my-6 mx-auto max-w-3xl">
+                                {errorMessage && <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800" role="alert">{errorMessage}</div>}
 
                                 <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-white outline-none focus:outline-none justify-center items-center">
                                     <div className="flex items-start w-full justify-between p-5 border-b border-solid border-slate-200 rounded-t">
@@ -235,46 +432,61 @@ function LandingPage() {
 
                                     </div>
                                     <div className="relative p-6 flex-col w-full justify-center items-center ">
-                                        {details.userId ? 
-                                         <>
-                                         <div className='flex justify-center w-full rounded-md bg-gray-100 p-2 shadow-md '>
-                                            <div className='w-full flex flex-col ' >
-                                                <span className=' w-full font-semibold  '>{details.username}</span>
-                                                <span className='w-full text-sm '>{details.userId}</span>
+                                        {details.userId ?
+                                            <>
+                                                <div className='flex justify-center w-full rounded-md bg-gray-100 p-2 shadow-md '>
+                                                    <div className='w-full flex flex-col ' >
+                                                        <span className=' w-full font-semibold  '>{details.username}</span>
+                                                        <span className='w-full text-sm '>{details.userId}</span>
 
-                                            </div>
-                                            <div className='flex flex-col justify-center gap-2'>
-                                                <div><FcApproval className='text-lg'/></div>
-                                                <div><AiFillCloseCircle className='text-red-600' onClick={handleRemove}/></div>
+                                                    </div>
+                                                    <div className='flex flex-col justify-center gap-2'>
+                                                        <div><FcApproval className='text-lg' /></div>
+                                                        <div><AiFillCloseCircle className='text-red-600' onClick={handleRemove} /></div>
 
-                                            </div>
+                                                    </div>
 
 
-                                             </div> 
-                                             <br />
-                                            </>:
-                                            <div>
-                                                <input
-                                                    type="text"
-                                                    className='w-full p-2'
+                                                </div>
+                                                <br />
+                                            </> :
+                                            <>
+                                                <div className='relative w-full'>
+                                                    <input
+                                                        type="text"
+                                                        className='w-full p-2 border'
 
-                                                    name="userId"
-                                                    placeholder="Enter the userId"
-                                                    onChange={handleSearch} required />
-                                                {searchUser.length > 0 ?
+                                                        name="userId"
+                                                        placeholder="Enter the userId"
+                                                        onChange={handleSearch} required />
+                                                    {searchUser.length > 0 ?
 
-                                                    searchUser.map((obj) => {
-                                                        return (
-                                                            <div className=''>
+                                                        <div className='fixed w-64  bg-white'>
 
-                                                                <div className=' absolute h-20 w-20' onClick={(e) => { handleSelect(e, obj) }}>{obj.username}</div>
-                                                            </div>
-                                                        )
-                                                    })
-                                                    : null
-                                                }
-                                                <br /> <br />
-                                            </div>
+                                                            {
+                                                                searchUser.map((obj) => {
+                                                                   
+                                                                    if(obj._id != decoded.id){
+
+                                                                        return (
+
+                                                                       
+
+                                                                            <div className='rounded-xl border my-1 shadow-md w-60 h-8 p-1 flex justify-center bg-white' onClick={(e) => { handleSelect(e, obj) }}>{obj.userId}</div>
+    
+    
+                                                                        )
+
+                                                                    }
+                                                              
+                                                                })
+                                                            }
+                                                        </div>
+                                                        : null
+                                                    }
+                                                    <br /> <br />
+                                                </div>
+                                            </>
 
 
                                         }
@@ -283,7 +495,7 @@ function LandingPage() {
                                         <input
                                             type="number"
                                             name="amount"
-                                            className='w-full p-2'
+                                            className='w-full p-2 border'
                                             placeholder="Enter the Amount"
                                             onChange={handleChange}
                                             required />
@@ -291,7 +503,7 @@ function LandingPage() {
                                         <textarea
                                             type="text"
                                             name="message"
-                                            className='w-full p-2'
+                                            className='w-full p-2 border'
                                             placeholder="Enter the Message"
                                             onChange={handleChange}
                                             required />
@@ -302,7 +514,7 @@ function LandingPage() {
                                         <button
                                             className="text-red-500 background-transparent font-bold uppercase px-6 py-2 text-sm outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                                             type="button"
-                                            onClick={() => SetShowMod(false)}
+                                            onClick={closeModal}
                                         >
                                             Close
                                         </button>
@@ -311,8 +523,64 @@ function LandingPage() {
                                             type="submit"
 
                                         >
-                                           <span className='px-1'>Pay</span> 
-                                            <MdSend/>
+                                            <span className='px-1'>Pay</span>
+                                            <MdSend />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <div className="opacity-50 fixed inset-0 z-40 bg-black"></div>
+                </>
+            ) : null}
+
+            {showModal ? (
+                <>
+                    <form
+                        onSubmit={onHandleDeposit}
+                    >
+                        <div className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none ">
+                            <div className="relative w-2/5 my-6 mx-auto max-w-3xl">
+
+                                <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-white outline-none focus:outline-none justify-center items-center">
+                                    <div className="flex items-start w-full justify-between p-5 border-b border-solid border-slate-200 rounded-t">
+                                        <h3 className="text-3xl font-semibold text-center w-full">Add To Wallet</h3>
+
+                                    </div>
+                                    <div className="relative p-6 flex-col w-full">
+
+                                        <input
+                                            type="number"
+                                            name="amount"
+                                            className='w-full p-2 border'
+                                            placeholder="Enter the Amount"
+                                            onChange={onHandleChange}
+                                            required />
+                                        <br /> <br />
+                                        <textarea
+                                            type="text"
+                                            name="message"
+                                            className='w-full p-2 border'
+                                            placeholder="Enter the Message"
+                                            onChange={onHandleChange}
+                                            required />
+                                    </div>
+
+                                    <div className="flex items-center justify-end p-6 border-t border-solid border-slate-200 rounded-b">
+                                        <button
+                                            className="text-red-500 background-transparent font-bold uppercase px-6 py-2 text-sm outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                                            type="button"
+                                            onClick={() => SetShowModal(false)}
+                                        >
+                                            Close
+                                        </button>
+                                        <button
+                                            className="bg-blue-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                                            type="submit"
+
+                                        >
+                                            Deposit
                                         </button>
                                     </div>
                                 </div>

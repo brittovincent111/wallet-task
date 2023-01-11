@@ -109,6 +109,8 @@ function UserLogin() {
 
                 </div>
               </form>
+              <Link to='/signup' className='text-md text--900 font-semibold p-4'>signUp ?</Link>
+
 
              
 
@@ -116,7 +118,7 @@ function UserLogin() {
             </div>
 
           </div>
-          <div hidden className='mainPhoto relative w-2/5  bg-sky-600 rounded-tr-2xl rounded-br-2xl lg:block  '  >
+          <div hidden className='mainbg relative w-2/5  bg-sky-600 rounded-tr-2xl rounded-br-2xl lg:block  '  >
 
 
           </div>

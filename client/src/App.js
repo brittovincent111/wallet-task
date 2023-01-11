@@ -5,6 +5,7 @@ import Navbar from './components/navbar/Navbar';
 import NavbarPage from './Pages/navbarPage/NavbarPage';
 import UserLandingPage from './Pages/userlandingPage/UserLandingPage';
 import UserLoginPage from './Pages/userloginPage/UserLoginPage';
+import ErrorPage from './components/errorPage/ErrorPage';
 
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
 
         <Route path='/' element={<NavbarPage />}> 
           <Route index  element={<UserLandingPage />} />
+          <Route  path='/errorPage' element={<ErrorPage/>}/>
          </Route>
           {/* <Route path='/'/> */}
 

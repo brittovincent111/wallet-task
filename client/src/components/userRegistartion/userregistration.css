@@ -10,6 +10,6 @@
 }
 
 .LoginMain{
-    background: rgb(2,0,36);
-background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 45%, rgba(0,212,255,1) 100%);
+    background: rgb(38,97,159);
+    background: linear-gradient(90deg, rgba(38,97,159,1) 1%, rgba(147,149,228,1) 50%, rgba(0,155,255,1) 100%);
 }

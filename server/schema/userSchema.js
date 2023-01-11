@@ -24,10 +24,40 @@ const UserSchema = new Schema({
         type: String,
         required: true
     },
-    payment: {
-        type : Array,
-        required :true
-    },
+    payment:[{
+        senderId : {
+
+            type: mongoose.Schema.Types.ObjectId,
+            require: true,
+            ref: "user"
+
+        },
+        recieverId : {
+            type: mongoose.Schema.Types.ObjectId,
+            require: true,
+            ref: "user"
+
+        },
+        amount : {
+            type : Number,
+            require: true,
+        },
+        message :{
+            type:String,
+            required: true
+        },date :{
+            type : Date,
+            required : true
+
+        },status:{
+            type:String,
+            required : true
+        }
+
+    }]
+    
+    
+    ,
     wallet:{
         type:Number,
         default : 0

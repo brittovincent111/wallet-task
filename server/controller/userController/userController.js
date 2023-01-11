@@ -4,6 +4,9 @@ const jwt = require('jsonwebtoken')
 
 const controller = {
 
+
+    /* ------------------------------ REGISTER USER ----------------------------- */
+
     userRegistration : async(req,res)=>{
 
         try {
@@ -23,7 +26,7 @@ const controller = {
             if (emailCheck) {
 
                 res.status(401).
-                    json({ error: "Email or UserId ......Exists" })
+                    json({ error: "Email or UserId Exists" })
             } else {
 
                 await userSchemma.create({
@@ -50,6 +53,11 @@ const controller = {
 
 
     }, 
+
+
+    /* ------------------------------- USER LOGIN ------------------------------- */
+
+
     userLogin: async (req, res) => {
 
         try {
@@ -100,11 +108,18 @@ const controller = {
         }
     },
 
+
+
+    /* ------------------------------- USERDETAILS ------------------------------ */
+
+
     userDetails : async(req,res)=>{
         try{
            
             let users = await userSchemma.
-              findOne({_id : req.params.id})
+              findOne({_id : req.params.id}).
+              populate('payment.recieverId payment.senderId')
+              .sort({_id : -1})
 
               const data = {
                 password,
@@ -114,14 +129,23 @@ const controller = {
               } = users._doc
 
               console.log(payment ,"datttaaa");
+              payment = payment.sort(function(a,b){
+              
+                return new Date(b.date) - new Date(a.date);
+              });
 
               res.status(200).json({details , payment   })
 
 
         }catch(error){
 
+            res.status(500).
+            json({ error: "something went wrong" })
+
         }
     },
+
+    /* ------------------------------- FIND USERS ------------------------------- */
 
     findUser : async(req,res)=>{
         try {
@@ -137,11 +161,13 @@ const controller = {
       
           } catch (error) {
             
-            console.log(error , "error")
-            res.send(error)
+            res.status(500).
+            json({ error: "something went wrong" })
       
           }
     },
+
+    /* ------------------------------ SEND PAYMENT ------------------------------ */
 
     userPayment:async(req,res)=>{
         try{
@@ -156,6 +182,8 @@ const controller = {
                 message
 
             } = req.body
+            
+            /* ---------------------------- UPDATING RECIVER ---------------------------- */
 
             let payment = await userSchemma.updateOne({ _id : recieverId },
                 {$push : { 'payment' : { 
@@ -170,6 +198,9 @@ const controller = {
                      
                 }},$inc:{wallet : amount} }
                 )
+
+                /* ----------------------------- UPDATING SENDER ---------------------------- */
+
                 let paymentDebited = await userSchemma.updateOne({ _id : senderId },
                     {$push : { 'payment' : { 
     
@@ -184,9 +215,52 @@ const controller = {
                     }},$inc:{wallet : -amount} }
                     )
 
+                    res.status(200).json("uodated")
+
         }catch(error){
 
-            console.log(error , "error")
+            res.status(500).
+            json({ error: "something went wrong" })
+
+        }
+    },
+
+/* ------------------------------ USER DEPOSIT ------------------------------ */
+
+
+    userDeposit:async(req,res)=>{
+
+        try{
+            console.log(req.body)
+            const {
+                senderId,
+                recieverId,
+            
+                amount,
+                message
+
+            } = req.body
+
+            let payment = await userSchemma.updateOne({ _id : senderId },
+                {$push : { 'payment' : { 
+
+                    senderId : senderId ,
+                    recieverId : recieverId,                   
+                    amount : amount,
+                    status : "deposited",
+                    message : message ,
+                    date : Date.now()
+
+                     
+                }},$inc:{wallet : amount} })
+
+                res.status(200).json("payment deposited")
+
+
+        }catch(error){
+
+            res.status(500).
+            json({ error: "something went wrong" })
 
         }
     }
